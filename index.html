@@ -2,13 +2,71 @@
 <html>
 <head>
     <title>Kindle Wiki Sender</title>
+    <style>
+        #suggestions {
+            border: 1px solid #aaa;
+            max-width: 300px;
+            margin-top: 0;
+            padding-left: 0;
+            list-style: none;
+            position: absolute;
+            background: white;
+            z-index: 10;
+        }
+        #suggestions li {
+            padding: 5px;
+            cursor: pointer;
+        }
+        #suggestions li:hover {
+            background-color: #ddd;
+        }
+    </style>
 </head>
 <body>
     <h1>Send Wikipedia Article to Kindle</h1>
     <form action="https://2657-75-44-83-211.ngrok-free.app" method="POST">
-        <label for="wiki_url">Wikipedia URL:</label><br>
-        <input type="text" id="wiki_url" name="wiki_url" style="width: 300px;" required><br><br>
+        <label for="wiki_url">Wikipedia article name or URL:</label><br>
+        <input type="text" id="wikiInput" name="wiki_url" style="width: 300px;" autocomplete="off" required>
+        <ul id="suggestions"></ul><br><br>
         <input type="submit" value="Send to Kindle">
     </form>
+
+    <script>
+        const input = document.getElementById('wikiInput');
+        const suggestions = document.getElementById('suggestions');
+
+        input.addEventListener('input', () => {
+            const query = input.value.trim();
+            if (query.length < 2) {
+                suggestions.innerHTML = '';
+                return;
+            }
+
+            fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=${encodeURIComponent(query)}&utf8=1&origin=*`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestions.innerHTML = '';
+                    const results = data.query.search.slice(0, 10);
+                    results.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item.title;
+                        li.onclick = () => {
+                            input.value = item.title;
+                            suggestions.innerHTML = '';
+                        };
+                        suggestions.appendChild(li);
+                    });
+                })
+                .catch(() => {
+                    suggestions.innerHTML = '';
+                });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target)) {
+                suggestions.innerHTML = '';
+            }
+        });
+    </script>
 </body>
 </html>
