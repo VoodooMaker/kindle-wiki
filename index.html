@@ -23,11 +23,19 @@
     </style>
 </head>
 <body>
-    <h1>Send Wikipedia Article to Kindle Scribe</h1>
+    <h1>Send Wikipedia Article to Kindle</h1>
     <form action="https://2657-75-44-83-211.ngrok-free.app" method="POST">
         <label for="wiki_url">Article name:</label><br>
         <input type="text" id="wikiInput" name="wiki_url" style="width: 300px;" autocomplete="off" required>
         <ul id="suggestions"></ul><br><br>
+
+        <label>Writing system:
+            <select id="writingSystem">
+                <option value="latin" selected>Latin</option>
+                <option value="greek">Greek (auto-convert)</option>
+            </select>
+        </label><br><br>
+
         <label><input type="checkbox" id="useWiktionary" name="use_wiktionary"> Use Wiktionary?</label><br><br>
         <input type="submit" value="Send to Kindle">
     </form>
@@ -36,10 +44,35 @@
         const input = document.getElementById('wikiInput');
         const suggestions = document.getElementById('suggestions');
         const useWiktionary = document.getElementById('useWiktionary');
+        const writingSystem = document.getElementById('writingSystem');
+
+        const latinToGreek = {
+            a: 'α', b: 'β', g: 'γ', d: 'δ', e: 'ε',
+            z: 'ζ', h: 'η', u: 'θ', i: 'ι', k: 'κ',
+            l: 'λ', m: 'μ', n: 'ν', j: 'ξ', o: 'ο',
+            p: 'π', r: 'ρ', s: 'σ', w: 'ς', t: 'τ',
+            y: 'υ', f: 'φ', x: 'χ', c: 'ψ', v: 'ω'
+        };
+
+        function transliterateToGreek(text) {
+            let result = '';
+            for (let ch of text) {
+                const lower = ch.toLowerCase();
+                result += latinToGreek[lower] || ch;
+            }
+            return result;
+        }
 
         input.addEventListener('input', () => {
-            const query = input.value.trim();
-            if (query.length < 2) {
+            let raw = input.value.trim();
+            const system = writingSystem.value;
+
+            if (system === 'greek') {
+                raw = transliterateToGreek(raw);
+                input.value = raw;
+            }
+
+            if (raw.length < 2) {
                 suggestions.innerHTML = '';
                 return;
             }
@@ -49,13 +82,13 @@
                 ? 'https://en.wiktionary.org/w/api.php'
                 : 'https://en.wikipedia.org/w/api.php';
 
-            const url = `${endpoint}?action=opensearch&search=${encodeURIComponent(query)}&limit=10&format=json&origin=*`;
+            const url = `${endpoint}?action=opensearch&search=${encodeURIComponent(raw)}&limit=10&format=json&origin=*`;
 
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     suggestions.innerHTML = '';
-                    const titles = data[1]; // array of titles
+                    const titles = data[1];
                     titles.forEach(title => {
                         const li = document.createElement('li');
                         li.textContent = title;
