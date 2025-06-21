@@ -25,25 +25,31 @@
 <body>
     <h1>Send Wikipedia Article to Kindle</h1>
     <form action="https://2657-75-44-83-211.ngrok-free.app" method="POST">
-        <label for="wiki_url">Wikipedia article name or URL:</label><br>
+        <label for="wiki_url">Article name:</label><br>
         <input type="text" id="wikiInput" name="wiki_url" style="width: 300px;" autocomplete="off" required>
         <ul id="suggestions"></ul><br><br>
-        <label><input type="checkbox" name="remove_links">Wiktionary</label><br><br>
+        <label><input type="checkbox" id="useWiktionary" name="use_wiktionary"> Use Wiktionary?</label><br><br>
         <input type="submit" value="Send to Kindle">
     </form>
 
     <script>
         const input = document.getElementById('wikiInput');
         const suggestions = document.getElementById('suggestions');
-
+        const useWiktionary = document.getElementById('useWiktionary');
+    
         input.addEventListener('input', () => {
             const query = input.value.trim();
             if (query.length < 2) {
                 suggestions.innerHTML = '';
                 return;
             }
-
-            fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=${encodeURIComponent(query)}&utf8=1&origin=*`)
+    
+            const isWiktionary = useWiktionary.checked;
+            const endpoint = isWiktionary
+                ? 'https://en.wiktionary.org/w/api.php'
+                : 'https://en.wikipedia.org/w/api.php';
+    
+            fetch(`${endpoint}?action=query&list=search&format=json&srsearch=${encodeURIComponent(query)}&utf8=1&origin=*`)
                 .then(response => response.json())
                 .then(data => {
                     suggestions.innerHTML = '';
@@ -62,12 +68,13 @@
                     suggestions.innerHTML = '';
                 });
         });
-
+    
         document.addEventListener('click', (e) => {
             if (!input.contains(e.target)) {
                 suggestions.innerHTML = '';
             }
         });
     </script>
+
 </body>
 </html>
