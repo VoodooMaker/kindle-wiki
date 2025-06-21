@@ -36,29 +36,31 @@
         const input = document.getElementById('wikiInput');
         const suggestions = document.getElementById('suggestions');
         const useWiktionary = document.getElementById('useWiktionary');
-    
+
         input.addEventListener('input', () => {
             const query = input.value.trim();
             if (query.length < 2) {
                 suggestions.innerHTML = '';
                 return;
             }
-    
+
             const isWiktionary = useWiktionary.checked;
             const endpoint = isWiktionary
                 ? 'https://en.wiktionary.org/w/api.php'
                 : 'https://en.wikipedia.org/w/api.php';
-    
-            fetch(`${endpoint}?action=query&list=search&format=json&srsearch=${encodeURIComponent(query)}&utf8=1&origin=*`)
+
+            const url = `${endpoint}?action=opensearch&search=${encodeURIComponent(query)}&limit=10&format=json&origin=*`;
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     suggestions.innerHTML = '';
-                    const results = data.query.search.slice(0, 10);
-                    results.forEach(item => {
+                    const titles = data[1]; // array of titles
+                    titles.forEach(title => {
                         const li = document.createElement('li');
-                        li.textContent = item.title;
+                        li.textContent = title;
                         li.onclick = () => {
-                            input.value = item.title;
+                            input.value = title;
                             suggestions.innerHTML = '';
                         };
                         suggestions.appendChild(li);
@@ -68,13 +70,12 @@
                     suggestions.innerHTML = '';
                 });
         });
-    
+
         document.addEventListener('click', (e) => {
             if (!input.contains(e.target)) {
                 suggestions.innerHTML = '';
             }
         });
     </script>
-
 </body>
 </html>
