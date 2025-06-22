@@ -20,11 +20,30 @@
         #suggestions li:hover {
             background-color: #ddd;
         }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f8f8f8;
+        }
+        .processing {
+            color: #d35400;
+        }
+        .success {
+            color: #27ae60;
+        }
+        .error {
+            color: #c0392b;
+        }
+        .queue {
+            color: #2980b9;
+        }
     </style>
 </head>
 <body>
     <h1>Send Wikipedia Article to Kindle</h1>
-    <form action="https://2657-75-44-83-211.ngrok-free.app" method="POST">
+    <form id="wikiForm">
         <label for="wiki_url">Article name:</label><br>
         <input type="text" id="wikiInput" name="wiki_url" style="width: 300px;" autocomplete="off" required>
         <ul id="suggestions"></ul><br><br>
@@ -40,11 +59,17 @@
         <input type="submit" value="Send to Kindle">
     </form>
 
+    <div id="status">
+        <p>Status: <span id="statusMessage">Ready to process articles</span></p>
+    </div>
+
     <script>
         const input = document.getElementById('wikiInput');
         const suggestions = document.getElementById('suggestions');
         const useWiktionary = document.getElementById('useWiktionary');
         const writingSystem = document.getElementById('writingSystem');
+        const form = document.getElementById('wikiForm');
+        const statusMessage = document.getElementById('statusMessage');
 
         const latinToGreek = {
             a: 'α', b: 'β', g: 'γ', d: 'δ', e: 'ε',
@@ -62,6 +87,51 @@
             }
             return result;
         }
+
+        // Check status every 2 seconds
+        function checkStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateStatus(data.message, data.is_processing ? 'processing' : 'success');
+                })
+                .catch(error => {
+                    updateStatus('Error checking status', 'error');
+                });
+        }
+
+        function updateStatus(message, statusClass) {
+            statusMessage.textContent = message;
+            statusMessage.className = statusClass;
+        }
+
+        // Start checking status
+        setInterval(checkStatus, 2000);
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const articleName = input.value.trim();
+            const isWiktionary = useWiktionary.checked;
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `wiki_url=${encodeURIComponent(articleName)}&use_wiktionary=${isWiktionary ? 'on' : ''}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    updateStatus(data.error, 'error');
+                } else {
+                    updateStatus(data.message, 'queue');
+                }
+            })
+            .catch(error => {
+                updateStatus('Error submitting article', 'error');
+            });
+        });
 
         input.addEventListener('input', () => {
             let raw = input.value.trim();
