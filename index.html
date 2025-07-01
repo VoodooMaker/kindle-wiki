@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h1>Send Wikipedia Article to Kindle</h1>
+    <h1>Send Wikimedia Article to Kindle</h1>
     <form action="https://8038-75-44-83-211.ngrok-free.app" method="POST">
         <label for="wiki_url">Article name:</label><br>
         <input type="text" id="wikiInput" name="wiki_url" style="width: 300px;" autocomplete="off" required>
@@ -36,14 +36,27 @@
             </select>
         </label><br><br>
 
-        <label><input type="checkbox" id="useWiktionary" name="use_wiktionary"> Use Wiktionary?</label><br><br>
+        <label>Wiki Project:
+            <select id="wikiProject" name="wiki_project">
+                <option value="wikipedia">Wikipedia</option>
+                <option value="wiktionary">Wiktionary</option>
+                <option value="wikibooks">Wikibooks</option>
+                <option value="wikiversity">Wikiversity</option>
+                <option value="wikisource">Wikisource</option>
+                <option value="wikivoyage">Wikivoyage</option>
+                <option value="wikinews">Wikinews</option>
+                <option value="wikiquote">Wikiquote</option>
+                <option value="wikispecies">Wikispecies</option>
+            </select>
+        </label><br><br>
+
         <input type="submit" value="Send to Kindle">
     </form>
 
     <script>
         const input = document.getElementById('wikiInput');
         const suggestions = document.getElementById('suggestions');
-        const useWiktionary = document.getElementById('useWiktionary');
+        const wikiProject = document.getElementById('wikiProject');
         const writingSystem = document.getElementById('writingSystem');
 
         const latinToGreek = {
@@ -77,10 +90,8 @@
                 return;
             }
 
-            const isWiktionary = useWiktionary.checked;
-            const endpoint = isWiktionary
-                ? 'https://en.wiktionary.org/w/api.php'
-                : 'https://en.wikipedia.org/w/api.php';
+            const project = wikiProject.value;
+            const endpoint = `https://en.${project}.org/w/api.php`;
 
             const url = `${endpoint}?action=opensearch&search=${encodeURIComponent(raw)}&limit=10&format=json&origin=*`;
 
